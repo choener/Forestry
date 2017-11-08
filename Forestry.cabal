@@ -1,0 +1,98 @@
+name:           Forestry
+version:        0.0.0.1
+author:         Christian Hoener zu Siederdissen, 2017
+copyright:      Christian Hoener zu Siederdissen, 2017
+homepage:       https://github.com/choener/Forestry
+bug-reports:    https://github.com/choener/Forestry/issues
+maintainer:     choener@bioinf.uni-leipzig.de
+category:       Formal Languages, Bioinformatics
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+stability:      experimental
+cabal-version:  >= 1.10.0
+tested-with:    GHC == 8.0.2, GHC == 8.2.1
+synopsis:       Comparison of trees and forests.
+description:
+                Wikipedia on forestry: "the science and craft of creating,
+                managing, using, conserving, and repairing forests and
+                associated resources."
+                .
+                This is a modest starting point and provides just:
+                .
+                * forest alignments
+                * tree alignments
+                .
+
+
+
+Extra-Source-Files:
+  changelog.md
+  README.md
+
+
+
+library
+  build-depends: base                   >= 4.7      &&  < 5.0
+               , vector                 >= 0.10
+  exposed-modules:
+    -- TODO better module names
+    -- TODO all modules
+    Data.Forest.Static.Align
+    Data.Forest.Static.Edit
+  default-language:
+    Haskell2010
+  default-extensions: BangPatterns
+                    , UnicodeSyntax
+  ghc-options:
+    -O2
+
+
+
+test-suite properties
+  type:
+    exitcode-stdio-1.0
+  main-is:
+    properties.hs
+  ghc-options:
+    -threaded -rtsopts -with-rtsopts=-N -O2 -funbox-strict-fields
+  hs-source-dirs:
+    tests
+  default-language:
+    Haskell2010
+  default-extensions: BangPatterns
+                    , UnicodeSyntax
+  build-depends: base
+               , QuickCheck
+               , tasty                        >= 0.11
+               , tasty-quickcheck             >= 0.8
+               , tasty-th                     >= 0.1
+               --
+               , Forestry
+
+
+
+benchmark benchmark
+  default-extensions: BangPatterns
+                    , UnicodeSyntax
+  build-depends:  base
+               ,  criterion         >=  1.0.2
+               --
+               ,  Forestry
+  default-language:
+    Haskell2010
+  hs-source-dirs:
+    tests
+  main-is:
+    benchmark.hs
+  type:
+    exitcode-stdio-1.0
+  ghc-options:
+    -O2
+
+
+
+source-repository head
+  type: git
+  location: git://github.com/choener/Forestry
+
