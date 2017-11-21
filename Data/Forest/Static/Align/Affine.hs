@@ -288,6 +288,10 @@ test n1 n2 = do
   runAlignS f1 f2 10 (-30) (-10) (-1)
 {-# NoInline test #-}
 
+
+
+-- |
+
 runAlignScoreTrees t1 t2 matchSc notmatchSc delinSc affinSc = do
   let (fwd,sc,bt') = run t1 t2 matchSc notmatchSc delinSc affinSc
   let (Z:.TW (ITbl _ _ _ iet) _ :.TW (ITbl _ _ _ ift) _ :.TW (ITbl _ _ _ iqt) _ :.TW (ITbl _ _ _ irt) _ :.TW (ITbl _ _ _ itt) _ :.TW (ITbl _ _ _ ist) _ :.TW (ITbl _ _ _ izt) _) = fwd
@@ -297,6 +301,52 @@ runAlignScoreTrees t1 t2 matchSc notmatchSc delinSc affinSc = do
     putStrLn ""
     forM_ b $ \x -> putStrLn $ T.drawTree $ fmap show x
 {-# NoInline runAlignScoreTrees #-}
+
+
+
+-- |
+
+runAlignScoreTreesIO
+  ∷ PG.FillWeight
+  → PG.RenderChoice
+  → FilePath
+  → Frst
+  → Frst
+  → Log Double
+  → Log Double
+  → Log Double
+  → Log Double
+  → IO ()
+runAlignScoreTreesIO fw probFileTy probFile t1 t2 matchSc mismatchSc indelSc affinSc = do
+  let temperature = 1.0
+  let (inn,out,_) = runIO t1 t2 matchSc mismatchSc indelSc affinSc temperature -- (t2 {F.lsib = VG.fromList [-1,-1], F.rsib = VG.fromList [-1,-1]})
+  let (Z:.TW (ITbl _ _ _ iet) _ :.TW (ITbl _ _ _ ift) _ :.TW (ITbl _ _ _ iqt) _ :.TW (ITbl _ _ _ irt) _ :.TW (ITbl _ _ _ itt) _ :.TW (ITbl _ _ _ ist) _ :.TW (ITbl _ _ _ izt) _) = inn
+  let (Z:.TW (ITbl _ _ _ iet) _ :.TW (ITbl _ _ _ oft) _ :.TW (ITbl _ _ _ oqt) _ :.TW (ITbl _ _ _ ort) _ :.TW (ITbl _ _ _ ott) _ :.TW (ITbl _ _ _ ost) _ :.TW (ITbl _ _ _ ozt) _) = out
+  let (Z:.(TreeIxR frst1 lb1 _):.(TreeIxR frst2 lb2 _), Z:.(TreeIxR _ ub1 _):.(TreeIxR _ ub2 _)) = bounds oft
+  let ix = (Z:.TreeIxR frst1 lb1 F:.TreeIxR frst2 lb2 F)
+  let sc = ift ! ix
+  print sc
+  let ps = map (\(k,k1,k2) ->
+            let k' = unsafeCoerce k
+            in  ( k1
+                , k2
+                , ((itt!k) * (ott!k') / sc)
+                , (maybe "-" label $ F.label t1 VG.!? k1)
+                , (maybe "-" label $ F.label t2 VG.!? k2)
+                )) [ (Z:.TreeIxR frst1 k1 T:.TreeIxR frst2 k2 T,k1,k2) | k1 <- [lb1 .. ub1 - 1], k2 <- [lb2 .. ub2 - 1] ]
+  --
+  let gsc = map (\(k1,k2,sc,l1,l2) -> sc) ps
+  let fillText [] = " "
+      fillText xs = xs
+  mapM_ print gsc
+  let gl1 = map (\k1 -> fillText . Text.unpack $ (maybe "-" label $ F.label t1 VG.!? k1)) [lb1 .. ub1 - 1]
+  let gl2 = map (\k2 -> fillText . Text.unpack $ (maybe "-" label $ F.label t2 VG.!? k2)) [lb2 .. ub2 - 1]
+  case probFileTy of
+         PG.SVG -> PG.svgGridFile probFile fw PG.FSfull ub1 ub2 gl1 gl2 gsc
+         PG.EPS -> PG.epsGridFile probFile fw PG.FSfull ub1 ub2 gl1 gl2 gsc
+{-# NoInline runAlignScoreTreesIO #-}
+
+
 
 runAlignS t1' t2' matchSc notmatchSc delinSc affinSc = do
   let f x = either error (F.forestPre . map getNewickTree) $ newicksFromText x

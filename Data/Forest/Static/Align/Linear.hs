@@ -1,4 +1,7 @@
 
+-- | A simple linear alignment module for forest-like structures. Currently all
+-- comparisons are on Newick-like forests.
+
 module Data.Forest.Static.Align.Linear where
 
 import           Control.Monad(forM_, unless)
@@ -189,6 +192,27 @@ test f1 f2 = do
   runAlignS n1 n2 1 (-1) (-1)
 {-# NoInline test #-}
 
+
+
+-- | This is the main entry for "main-like" calls that already provide trees. A
+-- match is defined as equality on the labels.
+--
+-- TODO this should be turned into the more ususual streaming-compatible
+-- behaviour.
+
+runAlignScoreTrees
+  ∷ Frst
+  -- ^ Forest @A@ to compare
+  → Frst
+  -- ^ Forest @B@ to compare
+  → Int
+  -- ^ score for matching nodes between @A@ and @B@.
+  → Int
+  -- ^ if nodes between @A/B@ are matched up but have unequal labels, this
+  -- score is chosen.
+  → Int
+  -- ^ Score for an @in/del@ operation.
+  → IO ()
 runAlignScoreTrees t1 t2 matchSc notmatchSc delinSc = do
   let (fwd,sc,bt') = runS t1 t2 matchSc notmatchSc delinSc
   let (Z:.TW (ITbl _ _ _ ift) _ :. TW (ITbl _ _ _ imt) _ :. TW (ITbl _ _ _ itt) _) = fwd
@@ -198,6 +222,54 @@ runAlignScoreTrees t1 t2 matchSc notmatchSc delinSc = do
     putStrLn ""
     forM_ b $ \x -> putStrLn $ T.drawTree $ fmap show x
 {-# NoInline runAlignScoreTrees #-}
+
+
+
+runAlignScoreTreesIO
+  ∷ PG.FillWeight
+  → PG.RenderChoice
+  → FilePath
+  → Frst
+  → Frst
+  → Log Double
+  → Log Double
+  → Log Double
+  → IO ()
+runAlignScoreTreesIO fw probFileTy probFile t1 t2 matchSc mismatchSc indelSc = do
+  let temperature = 1.0
+  let (inn,out,_) = runIO t1 t2 matchSc mismatchSc indelSc temperature
+  let (Z:.TW (ITbl _ _ _ ift) _ :. TW (ITbl _ _ _ imt) _ :. TW (ITbl _ _ _ itt) _) = inn
+  let (Z:.TW (ITbl _ _ _ oft) _ :. TW (ITbl _ _ _ omt) _ :. TW (ITbl _ _ _ ott) _) = out
+  let (Z:.(TreeIxR frst1 lb1 _):.(TreeIxR frst2 lb2 _), Z:.(TreeIxR _ ub1 _):.(TreeIxR _ ub2 _)) = bounds oft
+  let ix = (Z:.TreeIxR frst1 lb1 F:.TreeIxR frst2 lb2 F)
+  let scift = ift ! ix
+  print scift
+  let scoft = Prelude.sum [ oft ! (Z:.TreeIxR frst1 b1 F :. TreeIxR frst2 b2 F) | b1 <- [lb1 .. ub1], b2 <- [lb2 .. ub2] ]
+  print scoft
+  let scimt = Prelude.sum [ imt ! (Z:.TreeIxR frst1 b1 T :. TreeIxR frst2 b2 T) | b1 <- [lb1 .. ub1], b2 <- [lb2 .. ub2] ]
+  print scimt
+  let scomt = Prelude.sum [ omt ! (Z:.TreeIxR frst1 b1 T :. TreeIxR frst2 b2 T) | b1 <- [lb1 .. ub1], b2 <- [lb2 .. ub2] ]
+  print scomt
+  let ps = map (\(k,k1,k2) ->
+            let k' = unsafeCoerce k
+            in  ( k1
+                , k2
+                , ((imt!k) * (omt!k') / scift)
+                , (maybe "-" label $ F.label t1 VG.!? k1)
+                , (maybe "-" label $ F.label t2 VG.!? k2)
+                )) [ (Z:.TreeIxR frst1 k1 T:.TreeIxR frst2 k2 T,k1,k2) | k1 <- [lb1 .. ub1 - 1], k2 <- [lb2 .. ub2 - 1] ]
+  --
+  let gsc = map (\(k1,k2,sc,l1,l2) -> sc) ps
+  let fillText [] = " "
+      fillText xs = xs
+  let gl1 = map (\k1 -> fillText . Text.unpack $ (maybe "-" label $ F.label t1 VG.!? k1)) [lb1 .. ub1 - 1]
+  let gl2 = map (\k2 -> fillText . Text.unpack $ (maybe "-" label $ F.label t2 VG.!? k2)) [lb2 .. ub2 - 1]
+  case probFileTy of
+         PG.SVG -> PG.svgGridFile probFile fw PG.FSfull ub1 ub2 gl1 gl2 gsc
+         PG.EPS -> PG.epsGridFile probFile fw PG.FSfull ub1 ub2 gl1 gl2 gsc
+{-# NoInline runAlignScoreTreesIO #-}
+
+
 
 runAlignS t1' t2' matchSc notmatchSc delinSc = do
   let f x = either error (F.forestPre . map getNewickTree) $ newicksFromText x
