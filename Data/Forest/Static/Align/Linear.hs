@@ -74,7 +74,7 @@ part matchSc mismatchSc indelSc temp = SigGlobal
   , gAlign = \ (Z:.a:.b) f  -> f * if label a == label b then matchSc else mismatchSc
   , gIndel = \ (Z:.():.b) f -> f * indelSc
   , gDelin = \ (Z:.a:.()) f -> f * indelSc
-  , gH     = SM.foldl' (+) 0.0000001
+  , gH     = SM.foldl' (+) 0
   }
 {-# Inline part #-}
 
@@ -111,9 +111,9 @@ runForward f1 f2 matchSc notmatchSc delinSc = mutateTablesDefault $
 runInside :: Frst -> Frst -> Log Double -> Log Double -> Log Double -> Log Double -> Z:.Tbl (Log Double):.Tbl (Log Double):.Tbl (Log Double)
 runInside f1 f2 matchSc mismatchSc indelSc temperature = mutateTablesDefault $
                    gGlobal (part matchSc mismatchSc indelSc temperature)
-                   (ITbl 0 1 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00000001) [] ))
-                   (ITbl 0 0 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00000002) [] ))
-                   (ITbl 0 0 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00000003) [] ))
+                   (ITbl 0 1 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00001) [] ))
+                   (ITbl 0 0 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00002) [] ))
+                   (ITbl 0 0 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00003) [] ))
                    (node NTany $ F.label f1)
                    (node NTany $ F.label f2)
 {-# NoInline runInside #-}
@@ -125,9 +125,9 @@ runOutside :: Frst -> Frst -> Log Double -> Log Double -> Log Double -> Log Doub
 runOutside f1 f2 matchSc mismatchSc indelSc temperature (Z:.iF:.iM:.iT)
   = mutateTablesDefault $
     gLabolg (resig (part matchSc mismatchSc indelSc temperature))
-    (ITbl 0 0 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00000001) [] ))
-    (ITbl 0 1 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00000002) [] ))
-    (ITbl 0 1 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00000003) [] ))
+    (ITbl 0 0 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00001) [] ))
+    (ITbl 0 1 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00002) [] ))
+    (ITbl 0 1 (Z:.EmptyOk:.EmptyOk) (PA.fromAssocs (Z:.minIx f1:.minIx f2) (Z:.maxIx f1:.maxIx f2) (0.00003) [] ))
     iF
     iM
     iT
