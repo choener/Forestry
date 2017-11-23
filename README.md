@@ -2,6 +2,10 @@
 
 # Forestry: Science and craft of forests
 
+This library provides linear and affine tree alignment algorithms. In addition,
+a very simple program @RNAforestry@ is provided. This program mimics
+@RNAforester@.
+
 
 
 #### Contact

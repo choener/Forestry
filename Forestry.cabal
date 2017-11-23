@@ -23,7 +23,12 @@ description:
                 * forest alignments
                 * tree alignments
                 .
-                Build this library and executables with GHC-8.0.2
+                Build this library and executable with GHC-8.0.2
+                .
+                To enable @RNAforestry@, use @cabal new-build -frnaforestry@ or
+                @cabal new-configure -w compiler-path -frnaforestry && cabal
+                new-build@. We suggest using @cabal@ with the nix-style local
+                build options.
 
 
 
